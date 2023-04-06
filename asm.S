@@ -1,12 +1,6 @@
-#if __riscv_xlen == 64
-# define STORE    sd
-# define LOAD     ld
-# define LOG_REGBYTES 3
-#else
 # define STORE    sw
 # define LOAD     lw
 # define LOG_REGBYTES 2
-#endif
 #define REGBYTES (1 << LOG_REGBYTES)
 
 /*
@@ -23,37 +17,19 @@
 _start:
     /* Jump to the absolute address defined by the linker script. */
     // for 32bit
-    .if __riscv_xlen == 32
+    // make excutable from 8000_0004
+    nop
+    nop
     lui ra, %hi(_abs_start)
     jr %lo(_abs_start)(ra)
-    .endif
-
-    // for 64bit
-    .if __riscv_xlen == 64
-.option push
-.option norelax // to prevent an unsupported R_RISCV_ALIGN relocation from being generated
-1:
-    auipc ra, %pcrel_hi(1f)
-    ld ra, %pcrel_lo(1b)(ra)
-    jr ra
-    .align  3
-1:
-    .dword _abs_start
-.option pop
-    .endif
 
 _abs_start:
     .cfi_startproc
     .cfi_undefined ra
 
-    #ifdef SMODE
-    csrw sie, 0     // interrupt disable 
-    csrw sip, 0     // no pending interrupts
-    #else
-    csrw mie, 0
-    csrw mip, 0
-    #endif
-    
+    csrw mie, 0 // interrupt disable
+    csrw mip, 0 // no pending interrupts
+
 
     li  x1, 0
     li  x2, 0
@@ -90,13 +66,7 @@ _abs_start:
     la gp, __global_pointer$
     .option pop
 
-    #ifdef SMODE
-    // there is no equivalent of mhartid in supervisor mode.
-    // instead, the hartid is passed as paramter by SMODE
-    mv t2, a0   
-    #else 
     csrr t2, mhartid
-    #endif
     lui t0, %hi(_max_hart_id)
     add t0, t0, %lo(_max_hart_id)
     bgtu t2, t0, abort
@@ -176,11 +146,7 @@ default_start_trap:
     LOAD a7, 15*REGBYTES(sp)
 
     addi sp, sp, 16*REGBYTES
-    #ifdef SMODE
-    sret
-    #else
     mret
-    #endif
 
 /* Make sure there is an abort when linking */
 .section .text.abort
