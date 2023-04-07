@@ -359,13 +359,9 @@
 #![no_std]
 #![deny(missing_docs)]
 
-#[cfg(feature = "s-mode")]
-use riscv::register::{scause as xcause, stvec as xtvec, stvec::TrapMode as xTrapMode};
+use riscv::register::{ mcause as xcause, mhartid, mtvec as xtvec, mtvec::TrapMode as xTrapMode };
 
-#[cfg(not(feature = "s-mode"))]
-use riscv::register::{mcause as xcause, mhartid, mtvec as xtvec, mtvec::TrapMode as xTrapMode};
-
-pub use riscv_rt_macros::{entry, pre_init};
+pub use riscv_rt_macros::{ entry, pre_init };
 
 #[export_name = "error: riscv-rt appears more than once in the dependency graph"]
 #[doc(hidden)]
@@ -404,10 +400,6 @@ pub unsafe extern "C" fn start_rust(a0: usize, a1: usize, a2: usize) -> ! {
         fn _mp_hook(hartid: usize) -> bool;
     }
 
-    // sbi passes hartid as first parameter (a0)
-    #[cfg(feature = "s-mode")]
-    let hartid = a0;
-    #[cfg(not(feature = "s-mode"))]
     let hartid = mhartid::read();
 
     if _mp_hook(hartid) {
@@ -502,32 +494,159 @@ pub fn DefaultInterruptHandler() {
     }
 }
 
+// Derived from https://github.com/ch32-rs/ch32-rs-nightlies
 /* Interrupts */
 #[doc(hidden)]
+#[cfg(feature = "ch32v103")]
+#[allow(non_camel_case_types)]
+///Enumeration of all the interrupts.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[repr(u16)]
 pub enum Interrupt {
-    UserSoft,
-    SupervisorSoft,
-    MachineSoft,
-    UserTimer,
-    SupervisorTimer,
-    MachineTimer,
-    UserExternal,
-    SupervisorExternal,
-    MachineExternal,
+    ///1 - Reset
+    RESET = 1,
+    ///2 - NMI
+    NMI = 2,
+    ///3 - EXC
+    EXC = 3,
+    ///12 - SysTick
+    SYS_TICK = 12,
+    ///14 - SWI
+    SWI = 14,
+    ///16 - Window Watchdog interrupt
+    WWDG = 16,
+    ///17 - PVD through EXTI line detection interrupt
+    PVD = 17,
+    ///18 - Tamper interrupt
+    TAMPER = 18,
+    ///19 - RTC global interrupt
+    RTC = 19,
+    ///20 - Flash global interrupt
+    FLASH = 20,
+    ///21 - RCC global interrupt
+    RCC = 21,
+    ///22 - EXTI Line0 interrupt
+    EXTI0 = 22,
+    ///23 - EXTI Line1 interrupt
+    EXTI1 = 23,
+    ///24 - EXTI Line2 interrupt
+    EXTI2 = 24,
+    ///25 - EXTI Line3 interrupt
+    EXTI3 = 25,
+    ///26 - EXTI Line4 interrupt
+    EXTI4 = 26,
+    ///27 - DMA1 Channel1 global interrupt
+    DMA1_CH1 = 27,
+    ///28 - DMA1 Channel2 global interrupt
+    DMA1_CH2 = 28,
+    ///29 - DMA1 Channel3 global interrupt
+    DMA1_CH3 = 29,
+    ///30 - DMA1 Channel4 global interrupt
+    DMA1_CH4 = 30,
+    ///31 - DMA1 Channel5 global interrupt
+    DMA1_CH5 = 31,
+    ///32 - DMA1 Channel6 global interrupt
+    DMA1_CH6 = 32,
+    ///33 - DMA1 Channel7 global interrupt
+    DMA1_CH7 = 33,
+    ///34 - ADC1 global interrupt
+    ADC = 34,
+    ///39 - EXTI Line\[9:5\]
+    ///interrupts
+    EXTI9_5 = 39,
+    ///40 - TIM1 Break interrupt
+    TIM1_BRK = 40,
+    ///41 - TIM1 Update interrupt
+    TIM1_UP = 41,
+    ///42 - TIM1 Trigger and Commutation interrupts
+    TIM1_TRG_COM = 42,
+    ///43 - TIM1 Capture Compare interrupt
+    TIM1_CC = 43,
+    ///44 - TIM2 global interrupt
+    TIM2 = 44,
+    ///45 - TIM3 global interrupt
+    TIM3 = 45,
+    ///46 - TIM4 global interrupt
+    TIM4 = 46,
+    ///47 - I2C1 event interrupt
+    I2C1_EV = 47,
+    ///48 - I2C1 error interrupt
+    I2C1_ER = 48,
+    ///49 - I2C2 event interrupt
+    I2C2_EV = 49,
+    ///50 - I2C2 error interrupt
+    I2C2_ER = 50,
+    ///51 - SPI1 global interrupt
+    SPI1 = 51,
+    ///52 - SPI2 global interrupt
+    SPI2 = 52,
+    ///53 - USART1 global interrupt
+    USART1 = 53,
+    ///54 - USART2 global interrupt
+    USART2 = 54,
+    ///55 - USART3 global interrupt
+    USART3 = 55,
+    ///56 - EXTI Line\[15:10\]
+    ///interrupts
+    EXTI15_10 = 56,
+    ///57 - RTC Alarms through EXTI line interrupt
+    RTCALARM = 57,
+    ///58 - USB Device FS Wakeup through EXTI line interrupt
+    USBWAKE_UP = 58,
+    ///59 - USBHD_IRQHandler
+    USBHD = 59,
 }
 
-pub use self::Interrupt as interrupt;
+// pub use self::Interrupt as interrupt;
 
+// Derived from https://github.com/ch32-rs/ch32-rs-nightlies
+#[cfg(feature = "ch32v103")]
 extern "C" {
-    fn UserSoft();
-    fn SupervisorSoft();
-    fn MachineSoft();
-    fn UserTimer();
-    fn SupervisorTimer();
-    fn MachineTimer();
-    fn UserExternal();
-    fn SupervisorExternal();
-    fn MachineExternal();
+    fn RESET();
+    fn NMI();
+    fn EXC();
+    fn SYS_TICK();
+    fn SWI();
+    fn WWDG();
+    fn PVD();
+    fn TAMPER();
+    fn RTC();
+    fn FLASH();
+    fn RCC();
+    fn EXTI0();
+    fn EXTI1();
+    fn EXTI2();
+    fn EXTI3();
+    fn EXTI4();
+    fn DMA1_CH1();
+    fn DMA1_CH2();
+    fn DMA1_CH3();
+    fn DMA1_CH4();
+    fn DMA1_CH5();
+    fn DMA1_CH6();
+    fn DMA1_CH7();
+    fn ADC();
+    fn EXTI9_5();
+    fn TIM1_BRK();
+    fn TIM1_UP();
+    fn TIM1_TRG_COM();
+    fn TIM1_CC();
+    fn TIM2();
+    fn TIM3();
+    fn TIM4();
+    fn I2C1_EV();
+    fn I2C1_ER();
+    fn I2C2_EV();
+    fn I2C2_ER();
+    fn SPI1();
+    fn SPI2();
+    fn USART1();
+    fn USART2();
+    fn USART3();
+    fn EXTI15_10();
+    fn RTCALARM();
+    fn USBWAKE_UP();
+    fn USBHD();
 }
 
 #[doc(hidden)]
@@ -536,35 +655,77 @@ pub union Vector {
     pub reserved: usize,
 }
 
+// Derived from https://github.com/ch32-rs/ch32-rs-nightlies
+#[cfg(feature = "ch32v103")]
 #[doc(hidden)]
 #[no_mangle]
-pub static __INTERRUPTS: [Vector; 12] = [
-    Vector { handler: UserSoft },
-    Vector {
-        handler: SupervisorSoft,
-    },
+pub static __INTERRUPTS: [Vector; 60] = [
     Vector { reserved: 0 },
-    Vector {
-        handler: MachineSoft,
-    },
-    Vector { handler: UserTimer },
-    Vector {
-        handler: SupervisorTimer,
-    },
+    Vector { handler: RESET },
+    Vector { handler: NMI },
+    Vector { handler: EXC },
     Vector { reserved: 0 },
-    Vector {
-        handler: MachineTimer,
-    },
-    Vector {
-        handler: UserExternal,
-    },
-    Vector {
-        handler: SupervisorExternal,
-    },
     Vector { reserved: 0 },
+    Vector { reserved: 0 },
+    Vector { reserved: 0 },
+    Vector { reserved: 0 },
+    Vector { reserved: 0 },
+    Vector { reserved: 0 },
+    Vector { reserved: 0 },
+    Vector { handler: SYS_TICK },
+    Vector { reserved: 0 },
+    Vector { handler: SWI },
+    Vector { reserved: 0 },
+    Vector { handler: WWDG },
+    Vector { handler: PVD },
+    Vector { handler: TAMPER },
+    Vector { handler: RTC },
+    Vector { handler: FLASH },
+    Vector { handler: RCC },
+    Vector { handler: EXTI0 },
+    Vector { handler: EXTI1 },
+    Vector { handler: EXTI2 },
+    Vector { handler: EXTI3 },
+    Vector { handler: EXTI4 },
+    Vector { handler: DMA1_CH1 },
+    Vector { handler: DMA1_CH2 },
+    Vector { handler: DMA1_CH3 },
+    Vector { handler: DMA1_CH4 },
+    Vector { handler: DMA1_CH5 },
+    Vector { handler: DMA1_CH6 },
+    Vector { handler: DMA1_CH7 },
+    Vector { handler: ADC },
+    Vector { reserved: 0 },
+    Vector { reserved: 0 },
+    Vector { reserved: 0 },
+    Vector { reserved: 0 },
+    Vector { handler: EXTI9_5 },
+    Vector { handler: TIM1_BRK },
+    Vector { handler: TIM1_UP },
     Vector {
-        handler: MachineExternal,
+        handler: TIM1_TRG_COM,
     },
+    Vector { handler: TIM1_CC },
+    Vector { handler: TIM2 },
+    Vector { handler: TIM3 },
+    Vector { handler: TIM4 },
+    Vector { handler: I2C1_EV },
+    Vector { handler: I2C1_ER },
+    Vector { handler: I2C2_EV },
+    Vector { handler: I2C2_ER },
+    Vector { handler: SPI1 },
+    Vector { handler: SPI2 },
+    Vector { handler: USART1 },
+    Vector { handler: USART2 },
+    Vector { handler: USART3 },
+    Vector {
+        handler: EXTI15_10,
+    },
+    Vector { handler: RTCALARM },
+    Vector {
+        handler: USBWAKE_UP,
+    },
+    Vector { handler: USBHD },
 ];
 
 #[doc(hidden)]
@@ -594,4 +755,23 @@ pub unsafe extern "Rust" fn default_setup_interrupts() {
     }
 
     xtvec::write(_start_trap as usize, xTrapMode::Direct);
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! interrupt {
+    (
+        $ NAME: ident,
+        $ path: path,
+        locals: { $ ($ lvar: ident: $ lty: ty = $ lval: expr;) * }
+    ) => { # [allow (non_snake_case)]
+mod $ NAME { pub struct Locals { $ (pub $ lvar : $ lty ,) * } } # [allow (non_snake_case)]
+# [no_mangle]
+pub extern "C" fn $ NAME () { let _ = ch32v1::ch32v103 :: interrupt :: Interrupt :: $ NAME ; static mut LOCALS : self :: $ NAME :: Locals = self :: $ NAME :: Locals { $ ($ lvar : $ lval ,) * } ; let f : fn (& mut self :: $ NAME :: Locals) = $ path ; f (unsafe { & mut LOCALS }) ; } };
+    (
+        $ NAME: ident,
+        $ path: path
+    ) => { # [allow (non_snake_case)]
+# [no_mangle]
+pub extern "C" fn $ NAME () { let _ = ch32v1::ch32v103:: interrupt :: Interrupt :: $ NAME ; let f : fn () = $ path ; f () ; } };
 }

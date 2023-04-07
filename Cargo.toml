@@ -10,9 +10,6 @@ keywords = ["riscv", "runtime", "startup"]
 license = "ISC"
 edition = "2018"
 
-[features]
-s-mode = []
-
 [dependencies]
 r0 = "1.0.0"
 riscv = "0.10"
@@ -23,3 +20,7 @@ panic-halt = "0.2.0"
 
 [build-dependencies]
 riscv-target = "0.1.2"
+
+[features]
+default = []
+ch32v103 = []
