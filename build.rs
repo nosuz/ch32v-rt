@@ -28,7 +28,13 @@ fn main() {
     }
 
     // Put the linker script somewhere the linker can find it
-    fs::write(out_dir.join("link.x"), include_bytes!("link.x")).unwrap();
-    println!("cargo:rustc-link-search={}", out_dir.display());
-    println!("cargo:rerun-if-changed=link.x");
+    if cfg!(feature = "interrupt") {
+        fs::write(out_dir.join("link_int.x"), include_bytes!("link_int.x")).unwrap();
+        println!("cargo:rustc-link-search={}", out_dir.display());
+        println!("cargo:rerun-if-changed=link_int.x");
+    } else {
+        fs::write(out_dir.join("link.x"), include_bytes!("link.x")).unwrap();
+        println!("cargo:rustc-link-search={}", out_dir.display());
+        println!("cargo:rerun-if-changed=link.x");
+    }
 }

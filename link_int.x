@@ -4,10 +4,16 @@ PROVIDE(_max_hart_id = 0);
 PROVIDE(_hart_stack_size = 2K);
 PROVIDE(_heap_size = 0);
 
+PROVIDE(DefaultHandler = DefaultInterruptHandler);
+PROVIDE(ExceptionHandler = DefaultExceptionHandler);
+
 /* # Pre-initialization function */
 /* If the user overrides this using the `#[pre_init]` attribute or by creating a `__pre_init` function,
    then the function this points to will be called before the RAM is initialized. */
 PROVIDE(__pre_init = default_pre_init);
+
+/* A PAC/HAL defined routine that should initialize custom interrupt controller if needed. */
+PROVIDE(_setup_interrupts = default_setup_interrupts);
 
 /* # Multi-processing hook function
    fn _mp_hook() -> bool;
@@ -22,6 +28,7 @@ PROVIDE(_mp_hook = default_mp_hook);
   By default uses the riscv crates default trap handler
   but by providing the `_start_trap` symbol external crates can override.
 */
+PROVIDE(_start_trap = default_start_trap);
 
 SECTIONS
 {
@@ -40,6 +47,9 @@ SECTIONS
 
     *(.text .text.*);
 
+    *(.trap.rust);
+    . = ALIGN(1024);
+    *(.trap);
   } > REGION_TEXT
 
   .rodata : ALIGN(4)
