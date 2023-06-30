@@ -16,8 +16,9 @@ riscv = "0.10"
 riscv-rt-macros = { path = "macros", version = "0.2.0" }
 
 [dependencies.ch32v1]
-# path = "../ch32-rs-nightlies/ch32v1"
-git = "https://github.com/ch32-rs/ch32-rs-nightlies.git"
+#path = "../ch32-rs-nightlies/ch32v1"
+# git = "https://github.com/ch32-rs/ch32-rs-nightlies.git"
+git = "https://github.com/nosuz/ch32-rs-nightlies.git"
 
 version = "0.1.6"
 features = ["rt"]
